@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+langchain
+langchain-ollama
+langgraph0
+yfinance
+pandas
+numpy
+python-doten
