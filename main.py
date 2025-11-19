@@ -31,15 +31,24 @@ llm = ChatOllama(
     base_url="http://localhost:11434"  # Default Ollama URL
 )
 
+# Custom reducer for merging dictionaries
+def merge_dicts(left: Dict, right: Dict) -> Dict:
+    """Merge two dictionaries, with right taking precedence"""
+    if left is None:
+        return right
+    if right is None:
+        return left
+    return {**left, **right}
+
 # Define the state for our agent graph
 class AgentState(TypedDict):
     ticker: str
-    stock_data: Dict
+    stock_data: Annotated[Dict, merge_dicts]
     raw_data: object
     technical_analysis: str
     fundamental_analysis: str
     sentiment_analysis: str
-    prediction: Dict
+    prediction: Annotated[Dict, merge_dicts]
     messages: Annotated[List, operator.add]
 
 # Request model
@@ -308,11 +317,10 @@ def build_agent_graph():
     workflow.add_node("fundamental_analyst", fundamental_analyst_agent)
     workflow.add_node("predictor", prediction_agent)
     
-    # Define edges
+    # Define edges - Sequential execution to avoid state conflicts
     workflow.set_entry_point("data_collector")
     workflow.add_edge("data_collector", "technical_analyst")
-    workflow.add_edge("data_collector", "fundamental_analyst")
-    workflow.add_edge("technical_analyst", "predictor")
+    workflow.add_edge("technical_analyst", "fundamental_analyst")
     workflow.add_edge("fundamental_analyst", "predictor")
     workflow.add_edge("predictor", END)
     
